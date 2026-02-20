@@ -212,7 +212,9 @@ export class NuvemshopAPIService {
       return cached.data;
     }
 
-    // Debounce via Promise
+    // Rate-limiting delay of 300ms before each API call to respect the 2 req/sec limit.
+    // For true debouncing (cancelling rapid calls), implement at the call site using a
+    // library like lodash.debounce or AbortController.
     await new Promise((resolve) => setTimeout(resolve, 300));
 
     const response = await this.client.get<NuvemshopVariant[]>('/variants', {

@@ -3,6 +3,7 @@
  * Nunca expõe access_token diretamente ao frontend
  */
 
+import crypto from 'crypto';
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
@@ -61,7 +62,7 @@ app.get('/auth/callback', authRateLimiter, async (req: Request, res: Response) =
     const tokenResponse = await service.authenticate(code, clientId, clientSecret);
 
     // Armazenar token no servidor, nunca enviar ao frontend
-    const sessionId = `session_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const sessionId = crypto.randomBytes(32).toString('hex');
     tokenStore.set(sessionId, {
       accessToken: tokenResponse.access_token,
       storeId: String(tokenResponse.user_id),
