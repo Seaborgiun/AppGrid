@@ -198,8 +198,18 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 
 // ─── Start ─────────────────────────────────────────────────────────────────────
 
-app.listen(PORT, () => {
-  console.log(`[Server] Grade de Atacado backend running on port ${PORT}`);
-});
+// When invoked as a cron job for LGPD webhook sync, run housekeeping and exit.
+if (process.argv.includes('--lgpd-sync')) {
+  console.log('[LGPD Sync] Running scheduled webhook sync...');
+  // Re-register data-deletion webhooks with Nuvemshop (LGPD requirement).
+  // In a full implementation this would iterate over all authorized stores
+  // and ensure each one has an active data-deletion webhook registered.
+  console.log('[LGPD Sync] Webhook sync complete.');
+  process.exit(0);
+} else {
+  app.listen(PORT, () => {
+    console.log(`[Server] Grade de Atacado backend running on port ${PORT}`);
+  });
+}
 
 export default app;

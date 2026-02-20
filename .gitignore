@@ -149,4 +149,3 @@ types/*.d.ts
 types/*.d.ts.map
 
 # Widget build artifacts
-dist-widget/

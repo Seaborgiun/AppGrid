@@ -253,7 +253,7 @@ const VariantGrid: React.FC<VariantGridProps> = memo(
                     background: rowIdx % 2 === 0 ? '#ffffff' : '#f9fafb',
                   }}
                 >
-                  <td
+                  <th
                     scope="row"
                     style={{
                       padding: '8px 12px',
@@ -266,7 +266,7 @@ const VariantGrid: React.FC<VariantGridProps> = memo(
                     }}
                   >
                     {color}
-                  </td>
+                  </th>
                   {sizes.map((size) => {
                     const variant = grid.get(color)?.get(size);
                     if (!variant) {
