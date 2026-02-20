@@ -17,7 +17,7 @@ async function fetchVariants(
   const url = `${apiUrl.replace(/\/$/, '')}/api/products/${productId}/variants`;
   const res = await fetch(url, { credentials: 'include' });
   if (!res.ok) {
-    throw new Error(`Failed to fetch variants: HTTP ${res.status}`);
+    throw new Error(`Falha ao buscar variações: HTTP ${res.status}`);
   }
   return res.json() as Promise<FormattedVariant[]>;
 }
@@ -87,7 +87,7 @@ function WidgetApp({
     addToCartBulk(
       items.map((i) => ({ variantId: i.variantId, quantity: i.quantity }))
     ).catch((err: Error) => {
-      console.error('[GradeAtacado] Cart injection error:', err);
+      console.error('[GradeAtacado] Erro ao injetar no carrinho:', err);
     });
   }, []);
 
@@ -98,7 +98,7 @@ function WidgetApp({
 }
 
 /**
- * Mount widget into a single container element.
+ * Monta o widget em um único elemento contêiner.
  */
 function mountWidget({ productId, apiUrl, container }: WidgetMountOptions) {
   const root = createRoot(container);
@@ -106,7 +106,7 @@ function mountWidget({ productId, apiUrl, container }: WidgetMountOptions) {
 }
 
 /**
- * Auto-discover and mount all [data-grade-atacado] elements on the page.
+ * Detecta e monta automaticamente todos os elementos [data-grade-atacado] na página.
  */
 function autoMount() {
   const containers = document.querySelectorAll<HTMLElement>(
@@ -117,14 +117,14 @@ function autoMount() {
     const apiUrl =
       el.getAttribute('data-api-url') || window.location.origin;
     if (!productId) {
-      console.warn('[GradeAtacado] Missing data-product-id attribute', el);
+      console.warn('[GradeAtacado] Atributo data-product-id ausente', el);
       return;
     }
     mountWidget({ productId, apiUrl, container: el });
   });
 }
 
-// Auto-mount when DOM is ready
+// Monta automaticamente quando o DOM estiver pronto
 if (typeof document !== 'undefined') {
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', autoMount);

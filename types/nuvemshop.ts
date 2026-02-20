@@ -1,11 +1,11 @@
-/** Raw variant value (multilingual) */
+/** Valor multilíngue de variação */
 export interface NuvemshopVariantValue {
   en: string;
   pt: string;
   es: string;
 }
 
-/** Raw variant from Nuvemshop API GET /products/{id}/variants */
+/** Variação bruta retornada pela API Nuvemshop – GET /products/{id}/variants */
 export interface NuvemshopVariant {
   id: number;
   sku: string | null;
@@ -20,7 +20,7 @@ export interface NuvemshopVariant {
   updated_at: string;
 }
 
-/** Full product from Nuvemshop API GET /products/{id} */
+/** Produto completo retornado pela API Nuvemshop – GET /products/{id} */
 export interface NuvemshopProduct {
   id: number;
   name: Record<string, string>;
@@ -55,7 +55,7 @@ export interface NuvemshopAttribute {
   es: string;
 }
 
-/** Formatted variant for the VariantGrid component */
+/** Variação formatada para uso no componente VariantGrid */
 export interface FormattedVariant {
   variantId: number;
   sku: string;
@@ -70,7 +70,7 @@ export interface FormattedVariant {
   imageUrl: string | null;
 }
 
-/** Item to be added to the cart */
+/** Item a ser adicionado ao carrinho */
 export interface CartItem {
   variantId: number;
   quantity: number;
@@ -78,7 +78,7 @@ export interface CartItem {
   total: number;
 }
 
-/** OAuth token response from Nuvemshop */
+/** Resposta do token OAuth da Nuvemshop */
 export interface OAuthTokenResponse {
   access_token: string;
   token_type: string;
@@ -86,7 +86,7 @@ export interface OAuthTokenResponse {
   user_id: number;
 }
 
-/** Paginated API response wrapper */
+/** Estrutura de resposta paginada da API */
 export interface PaginatedResponse<T> {
   data: T[];
   total: number;

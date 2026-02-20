@@ -1,5 +1,5 @@
 services:
-  # ─── Backend: Node.js Express API proxy ──────────────────────────────────────
+  # ─── Backend: proxy de API Node.js Express ───────────────────────────────────
   - type: web
     name: appgrid-backend
     runtime: node
@@ -26,7 +26,7 @@ services:
       - key: POST_AUTH_REDIRECT
         sync: false
 
-  # ─── Static Site: Widget CDN ──────────────────────────────────────────────────
+  # ─── Site Estático: CDN do Widget ────────────────────────────────────────────
   - type: web
     name: appgrid-widget
     runtime: static
@@ -45,7 +45,7 @@ services:
         source: /*
         destination: /widget.js
 
-# ─── Cron Job: LGPD sync / housekeeping ──────────────────────────────────────
+# ─── Cron Job: sincronização LGPD / limpeza ──────────────────────────────────
 cronJobs:
   - name: lgpd-sync
     schedule: "0 3 * * *"

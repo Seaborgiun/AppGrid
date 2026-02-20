@@ -1,6 +1,6 @@
 /**
- * @fileoverview Cart injection strategies for Nuvemshop storefronts.
- * Tries three strategies in order of preference.
+ * @fileoverview Estratégias de injeção de itens no carrinho da Nuvemshop.
+ * Tenta três estratégias em ordem de preferência.
  */
 
 /**
@@ -10,7 +10,7 @@
  */
 
 /**
- * Delay helper.
+ * Aguarda o número de milissegundos informado.
  * @param {number} ms
  * @returns {Promise<void>}
  */
@@ -19,7 +19,7 @@ function delay(ms) {
 }
 
 /**
- * Show a toast message if the host page has a #cart-toast element.
+ * Exibe uma mensagem toast se a página hospedeira tiver um elemento #cart-toast.
  * @param {string} message
  */
 function showToast(message) {
@@ -33,9 +33,9 @@ function showToast(message) {
 }
 
 /**
- * Strategy 1: Use window.NuvemshopCart API (modern stores).
+ * Estratégia 1: Utiliza a API window.NuvemshopCart (lojas modernas).
  * @param {CartLineItem[]} items
- * @returns {Promise<boolean>} true if succeeded
+ * @returns {Promise<boolean>} true se bem-sucedido
  */
 async function strategyNuvemshopCartApi(items) {
   if (
@@ -56,22 +56,22 @@ async function strategyNuvemshopCartApi(items) {
     }
     return true;
   } catch (err) {
-    console.warn('[GradeAtacado] NuvemshopCart API failed:', err);
+    console.warn('[GradeAtacado] Falha na API NuvemshopCart:', err);
     return false;
   }
 }
 
 /**
- * Strategy 2: DOM manipulation – locate quantity inputs + add buttons on the page.
+ * Estratégia 2: Manipulação do DOM – localiza inputs de quantidade e botões de adição na página.
  * @param {CartLineItem[]} items
- * @returns {Promise<boolean>} true if at least one item was added
+ * @returns {Promise<boolean>} true se ao menos um item foi adicionado
  */
 async function strategyDomManipulation(items) {
   let added = 0;
   for (const item of items) {
     if (!item.variantId || item.quantity <= 0) continue;
     try {
-      // Attempt to find variant select dropdown
+      // Tenta localizar o dropdown de seleção de variação
       const variantSelect = /** @type {HTMLSelectElement|null} */ (
         document.querySelector(`select[data-variant-id="${item.variantId}"], select.js-product-variants`)
       );
@@ -84,7 +84,7 @@ async function strategyDomManipulation(items) {
         }
       }
 
-      // Find quantity input
+      // Localiza o campo de quantidade
       const qtyInput = /** @type {HTMLInputElement|null} */ (
         document.querySelector(
           `input[data-variant-id="${item.variantId}"], input.js-product-quantity, input[name="quantity"]`
@@ -97,7 +97,7 @@ async function strategyDomManipulation(items) {
         await delay(100);
       }
 
-      // Click add-to-cart button
+      // Clica no botão de adicionar ao carrinho
       const addBtn = /** @type {HTMLButtonElement|null} */ (
         document.querySelector(
           `button[data-variant-id="${item.variantId}"], button.js-add-to-cart, button[name="add"]`
@@ -109,14 +109,14 @@ async function strategyDomManipulation(items) {
         await delay(300);
       }
     } catch (err) {
-      console.warn(`[GradeAtacado] DOM strategy failed for variantId ${item.variantId}:`, err);
+      console.warn(`[GradeAtacado] Falha na estratégia DOM para variantId ${item.variantId}:`, err);
     }
   }
   return added > 0;
 }
 
 /**
- * Strategy 3: Redirect to /cart/add with query params.
+ * Estratégia 3: Redireciona para /cart/add com parâmetros na URL.
  * @param {CartLineItem[]} items
  * @returns {Promise<boolean>}
  */
@@ -132,10 +132,10 @@ async function strategyRedirect(items) {
 }
 
 /**
- * Add items to cart using the best available strategy.
- * Dispatches a 'grade-atacado:cart-updated' custom event on success.
+ * Adiciona itens ao carrinho utilizando a melhor estratégia disponível.
+ * Dispara o evento customizado 'grade-atacado:cart-updated' em caso de sucesso.
  *
- * @param {CartLineItem[]} items - Items to add to cart
+ * @param {CartLineItem[]} items - Itens a serem adicionados ao carrinho
  * @returns {Promise<void>}
  */
 export async function addToCartBulk(items) {
@@ -146,15 +146,15 @@ export async function addToCartBulk(items) {
 
   let success = false;
 
-  // Strategy 1: NuvemshopCart API
+  // Estratégia 1: API NuvemshopCart
   success = await strategyNuvemshopCartApi(validItems);
 
-  // Strategy 2: DOM manipulation
+  // Estratégia 2: Manipulação do DOM
   if (!success) {
     success = await strategyDomManipulation(validItems);
   }
 
-  // Strategy 3: Redirect
+  // Estratégia 3: Redirecionamento
   if (!success) {
     success = await strategyRedirect(validItems);
   }

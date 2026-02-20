@@ -19,8 +19,8 @@ interface CacheEntry<T> {
 }
 
 /**
- * Service layer for Nuvemshop REST API v2025-03.
- * All requests use the `Authentication: bearer {token}` header format.
+ * Camada de serviço para a API REST Nuvemshop v2025-03.
+ * Todas as requisições utilizam o cabeçalho `Authentication: bearer {token}`.
  */
 export class NuvemshopAPIService {
   private client: AxiosInstance;
@@ -28,7 +28,7 @@ export class NuvemshopAPIService {
   private userId: number | undefined;
   private cache = new Map<string, CacheEntry<unknown>>();
 
-  // Debounce timer for SKU search
+  // Timer de debounce para busca por SKU
   private skuDebounceTimer: ReturnType<typeof setTimeout> | null = null;
   private pendingSkuResolvers: Array<(variants: NuvemshopVariant[]) => void> = [];
   private pendingSkuRejecters: Array<(err: unknown) => void> = [];
@@ -47,7 +47,7 @@ export class NuvemshopAPIService {
       },
     });
 
-    // Request interceptor: inject auth header
+    // Interceptor de requisição: injeta o cabeçalho de autenticação
     this.client.interceptors.request.use((cfg) => {
       if (this.accessToken) {
         cfg.headers['Authentication'] = `bearer ${this.accessToken}`;
@@ -55,7 +55,7 @@ export class NuvemshopAPIService {
       return cfg;
     });
 
-    // Response interceptor: structured error logging
+    // Interceptor de resposta: registro estruturado de erros
     this.client.interceptors.response.use(
       (res) => res,
       (error: AxiosError) => {
@@ -70,7 +70,7 @@ export class NuvemshopAPIService {
   }
 
   /**
-   * Exchange OAuth authorization code for access token.
+   * Troca o código de autorização OAuth pelo token de acesso.
    */
   async authenticate(
     code: string,
@@ -97,7 +97,7 @@ export class NuvemshopAPIService {
   }
 
   /**
-   * Update stored credentials after token refresh or first auth.
+   * Atualiza as credenciais armazenadas após refresh ou autenticação inicial.
    */
   setAccessToken(token: string, userId: number): void {
     this.accessToken = token;
@@ -106,8 +106,8 @@ export class NuvemshopAPIService {
   }
 
   /**
-   * Fetch all variants for a product with automatic retry on 429 rate-limit.
-   * Max 3 retries with exponential backoff starting at 500ms.
+   * Busca todas as variações de um produto com retry automático em caso de rate limit (429).
+   * Máximo de 3 tentativas com backoff exponencial a partir de 500ms.
    */
   async getProductVariants(
     productId: string,
@@ -128,7 +128,7 @@ export class NuvemshopAPIService {
         if (axiosErr.response?.status === 429 && attempt < MAX_RETRIES) {
           const delay = BASE_DELAY_MS * Math.pow(2, attempt);
           console.warn(
-            `[NuvemshopAPI] Rate limited (429). Retry ${attempt + 1}/${MAX_RETRIES} in ${delay}ms`
+            `[NuvemshopAPI] Rate limit atingido (429). Tentativa ${attempt + 1}/${MAX_RETRIES} em ${delay}ms`
           );
           await this.sleep(delay);
           continue;
@@ -136,11 +136,11 @@ export class NuvemshopAPIService {
         throw err;
       }
     }
-    throw new Error('Max retries exceeded for getProductVariants');
+    throw new Error('Número máximo de tentativas excedido para getProductVariants');
   }
 
   /**
-   * Map a raw API variant to the shape expected by the VariantGrid component.
+   * Transforma uma variação bruta da API no formato esperado pelo componente VariantGrid.
    */
   formatVariantForGrid(
     apiVariant: NuvemshopVariant,
@@ -164,12 +164,12 @@ export class NuvemshopAPIService {
       promotionalPrice: apiVariant.promotional_price
         ? parseFloat(apiVariant.promotional_price)
         : null,
-      imageUrl: null, // resolved separately via image_id lookup
+      imageUrl: null, // resolvida separadamente via image_id
     };
   }
 
   /**
-   * Fetch full product details including variants and attributes.
+   * Busca os detalhes completos do produto, incluindo variações e atributos.
    */
   async getProduct(productId: string): Promise<NuvemshopProduct> {
     const response = await this.client.get<NuvemshopProduct>(
@@ -179,8 +179,8 @@ export class NuvemshopAPIService {
   }
 
   /**
-   * Search variants by SKU prefix across all products.
-   * Debounced 300ms; results cached in-memory for 5 minutes.
+   * Busca variações por prefixo de SKU em todos os produtos.
+   * Debounced por 300ms; resultados em cache por 5 minutos.
    */
   searchVariantsBySku(skuPrefix: string): Promise<NuvemshopVariant[]> {
     const cacheKey = `sku:${skuPrefix}`;

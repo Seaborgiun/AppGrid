@@ -4,7 +4,7 @@ import '@testing-library/jest-dom';
 import VariantGrid from '../../src/components/VariantGrid/VariantGrid';
 import type { FormattedVariant, CartItem } from '../../types/nuvemshop';
 
-// ─── Fixtures ─────────────────────────────────────────────────────────────────
+// ─── Dados de teste ───────────────────────────────────────────────────────────
 
 const makeVariant = (
   id: number,
@@ -35,23 +35,23 @@ const mockVariants: FormattedVariant[] = [
   makeVariant(5, 'Vermelho', 'M', 8, 59.9),
 ];
 
-// ─── Tests ────────────────────────────────────────────────────────────────────
+// ─── Testes ───────────────────────────────────────────────────────────────────
 
 describe('VariantGrid', () => {
-  test('renders table with color rows and size columns', () => {
+  test('renderiza tabela com linhas de cor e colunas de tamanho', () => {
     render(<VariantGrid variants={mockVariants} onBulkAdd={jest.fn()} />);
 
-    // Header row should have size columns
+    // A linha de cabeçalho deve ter colunas de tamanho
     expect(screen.getByText('P')).toBeInTheDocument();
     expect(screen.getByText('M')).toBeInTheDocument();
     expect(screen.getByText('G')).toBeInTheDocument();
 
-    // Row labels for colors
+    // Rótulos de linha para as cores
     expect(screen.getByText('Azul')).toBeInTheDocument();
     expect(screen.getByText('Vermelho')).toBeInTheDocument();
   });
 
-  test('all quantity inputs start at empty (zero)', () => {
+  test('todos os inputs de quantidade começam vazios (zero)', () => {
     render(<VariantGrid variants={mockVariants} onBulkAdd={jest.fn()} />);
 
     const inputs = screen.getAllByRole('spinbutton');
@@ -60,13 +60,13 @@ describe('VariantGrid', () => {
     });
   });
 
-  test('changing a quantity input updates the total unit count', () => {
+  test('alterar um input de quantidade atualiza o total de unidades', () => {
     render(<VariantGrid variants={mockVariants} onBulkAdd={jest.fn()} />);
 
     const azulPInput = screen.getByLabelText(/quantidade de azul tamanho p/i);
     fireEvent.change(azulPInput, { target: { value: '5' } });
 
-    // Text may be split across elements: <strong>5</strong> unidades selecionadas
+    // O texto pode estar dividido entre elementos: <strong>5</strong> unidades selecionadas
     expect(
       screen.getByText((_, el) =>
         el?.textContent?.replace(/\s+/g, ' ').trim() === '5 unidades selecionadas'
@@ -74,7 +74,7 @@ describe('VariantGrid', () => {
     ).toBeInTheDocument();
   });
 
-  test('total price is calculated correctly with multiple inputs', () => {
+  test('o preço total é calculado corretamente com múltiplos inputs', () => {
     render(<VariantGrid variants={mockVariants} onBulkAdd={jest.fn()} />);
 
     const azulPInput = screen.getByLabelText(/quantidade de azul tamanho p/i);
@@ -83,18 +83,18 @@ describe('VariantGrid', () => {
     fireEvent.change(azulPInput, { target: { value: '2' } }); // 2 × 49.90 = 99.80
     fireEvent.change(vermelhoMInput, { target: { value: '1' } }); // 1 × 59.90 = 59.90
 
-    // Total = 159.70
+    // Total = 159,70
     expect(screen.getByText(/159/)).toBeInTheDocument();
   });
 
-  test('Adicionar button is disabled when no quantities are selected', () => {
+  test('botão Adicionar está desabilitado quando nenhuma quantidade é selecionada', () => {
     render(<VariantGrid variants={mockVariants} onBulkAdd={jest.fn()} />);
 
     const addBtn = screen.getByRole('button', { name: /adicionar.*unidade/i });
     expect(addBtn).toBeDisabled();
   });
 
-  test('onBulkAdd is called with correct CartItems on submit', () => {
+  test('onBulkAdd é chamado com os CartItems corretos ao confirmar', () => {
     const onBulkAdd = jest.fn();
     render(<VariantGrid variants={mockVariants} onBulkAdd={onBulkAdd} />);
 
@@ -115,51 +115,51 @@ describe('VariantGrid', () => {
     });
   });
 
-  test('low stock badge is shown for variants with stock < 5', () => {
+  test('badge de estoque baixo é exibido para variações com estoque < 5', () => {
     render(<VariantGrid variants={mockVariants} onBulkAdd={jest.fn()} />);
 
-    // Variant 2: Azul M stock=3 → low stock
+    // Variação 2: Azul M estoque=3 → estoque baixo
     expect(screen.getByText(/Baixo: 3/)).toBeInTheDocument();
   });
 
-  test('out-of-stock input is disabled', () => {
+  test('input sem estoque está desabilitado', () => {
     render(<VariantGrid variants={mockVariants} onBulkAdd={jest.fn()} />);
 
-    // Variant 3: Azul G stock=0
+    // Variação 3: Azul G estoque=0
     const disabledInput = screen.getByLabelText(/quantidade de azul tamanho g/i);
     expect(disabledInput).toBeDisabled();
   });
 
-  test('SKU search filters visible variants', () => {
+  test('busca por SKU filtra as variações visíveis', () => {
     render(<VariantGrid variants={mockVariants} onBulkAdd={jest.fn()} />);
 
     const skuInput = screen.getByLabelText(/buscar variante por sku/i);
     fireEvent.change(skuInput, { target: { value: 'SKU-VERMELHO' } });
 
-    // Only Vermelho row should remain; Azul color cells should not be visible
+    // Apenas a linha Vermelho deve permanecer; células da cor Azul não devem aparecer
     expect(screen.queryByText('Azul')).not.toBeInTheDocument();
     expect(screen.getByText('Vermelho')).toBeInTheDocument();
   });
 
-  test('"Mostrar apenas com estoque" hides out-of-stock variants', () => {
+  test('"Mostrar apenas com estoque" oculta variações sem estoque', () => {
     render(<VariantGrid variants={mockVariants} onBulkAdd={jest.fn()} />);
 
     const checkbox = screen.getByLabelText(/mostrar apenas com estoque/i);
     fireEvent.click(checkbox);
 
-    // Azul G (stock=0) should be hidden (its size column "G" might still show for other colors)
-    // But the "Esgotado" text should not appear
+    // Azul G (estoque=0) deve estar oculto (a coluna "G" pode ainda aparecer para outras cores)
+    // mas o texto "Esgotado" não deve aparecer
     expect(screen.queryByText('Esgotado')).not.toBeInTheDocument();
   });
 
-  test('CSV export button is disabled when no quantities selected', () => {
+  test('botão de exportar CSV está desabilitado quando nenhuma quantidade é selecionada', () => {
     render(<VariantGrid variants={mockVariants} onBulkAdd={jest.fn()} />);
 
     const csvBtn = screen.getByRole('button', { name: /exportar seleção como csv/i });
     expect(csvBtn).toBeDisabled();
   });
 
-  test('CSV export button is enabled when quantities are selected', () => {
+  test('botão de exportar CSV está habilitado quando quantidades são selecionadas', () => {
     render(<VariantGrid variants={mockVariants} onBulkAdd={jest.fn()} />);
 
     const azulPInput = screen.getByLabelText(/quantidade de azul tamanho p/i);
@@ -169,7 +169,7 @@ describe('VariantGrid', () => {
     expect(csvBtn).not.toBeDisabled();
   });
 
-  test('Limpar button resets all quantities', () => {
+  test('botão Limpar redefine todas as quantidades', () => {
     render(<VariantGrid variants={mockVariants} onBulkAdd={jest.fn()} />);
 
     const azulPInput = screen.getByLabelText(/quantidade de azul tamanho p/i);
@@ -186,7 +186,7 @@ describe('VariantGrid', () => {
     ).toBeInTheDocument();
   });
 
-  test('renders empty state message when no variants match filter', () => {
+  test('exibe mensagem de estado vazio quando nenhuma variação corresponde ao filtro', () => {
     render(<VariantGrid variants={mockVariants} onBulkAdd={jest.fn()} />);
 
     const skuInput = screen.getByLabelText(/buscar variante por sku/i);

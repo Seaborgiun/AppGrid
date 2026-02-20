@@ -34,12 +34,12 @@ app.use(
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
     },
   })
 );
 
-// ─── Helper: build API service from session ────────────────────────────────────
+// ─── Auxiliar: cria o serviço de API a partir da sessão ──────────────────────
 
 function buildApiService(req: Request): NuvemshopAPIService {
   const userId = req.session.userId;
@@ -52,16 +52,16 @@ function buildApiService(req: Request): NuvemshopAPIService {
 
 // ─── Rate limiters ────────────────────────────────────────────────────────────
 
-/** Strict limit on OAuth callback: 10 attempts per 15 minutes per IP */
+/** Limite estrito no callback OAuth: 10 tentativas por 15 minutos por IP */
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Too many authentication attempts, please try again later.' },
+  message: { error: 'Muitas tentativas de autenticação. Tente novamente mais tarde.' },
 });
 
-/** General API limiter: 100 requests per minute per IP */
+/** Limitador geral da API: 100 requisições por minuto por IP */
 const apiLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 100,
@@ -71,20 +71,20 @@ const apiLimiter = rateLimit({
 
 // ─── Routes ────────────────────────────────────────────────────────────────────
 
-/** Health check */
+/** Verificação de saúde do serviço */
 app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', version: '1.0.0' });
 });
 
 /**
- * OAuth callback: exchange code for access token.
+ * Callback OAuth: troca o code pelo access token.
  * GET /auth/callback?code=xxx&shop_id=yyy
  */
 app.get('/auth/callback', authLimiter, async (req: Request, res: Response) => {
   const { code, shop_id } = req.query as Record<string, string>;
 
   if (!code || !shop_id) {
-    res.status(400).json({ error: 'Missing code or shop_id parameter' });
+    res.status(400).json({ error: 'Parâmetro code ou shop_id ausente' });
     return;
   }
 
@@ -93,7 +93,7 @@ app.get('/auth/callback', authLimiter, async (req: Request, res: Response) => {
   const redirectUri = process.env.NUVEMSHOP_REDIRECT_URI;
 
   if (!clientId || !clientSecret || !redirectUri) {
-    res.status(500).json({ error: 'OAuth credentials not configured' });
+    res.status(500).json({ error: 'Credenciais OAuth não configuradas' });
     return;
   }
 
@@ -111,24 +111,24 @@ app.get('/auth/callback', authLimiter, async (req: Request, res: Response) => {
     req.session.accessToken = tokenData.access_token;
     req.session.userId = tokenData.user_id;
 
-    // Redirect to the store admin or a success page
+    // Redireciona para o admin da loja ou página de sucesso
     const redirectTo =
       process.env.POST_AUTH_REDIRECT ||
       `https://${shop_id}.lojavirtualnuvem.com.br/admin`;
     res.redirect(302, redirectTo);
   } catch (err) {
-    console.error('[Auth] OAuth exchange failed:', err);
-    res.status(502).json({ error: 'OAuth token exchange failed' });
+    console.error('[Auth] Falha na troca OAuth:', err);
+    res.status(502).json({ error: 'Falha na troca do token OAuth' });
   }
 });
 
 /**
  * Proxy: GET /api/products/:id/variants
- * Returns formatted variants (access token never exposed to frontend).
+ * Retorna variações formatadas (token de acesso nunca exposto ao frontend).
  */
 app.get('/api/products/:id/variants', apiLimiter, async (req: Request, res: Response) => {
   if (!req.session.accessToken) {
-    res.status(401).json({ error: 'Not authenticated' });
+    res.status(401).json({ error: 'Não autenticado' });
     return;
   }
   try {
@@ -139,18 +139,18 @@ app.get('/api/products/:id/variants', apiLimiter, async (req: Request, res: Resp
     );
     res.json(formatted);
   } catch (err) {
-    console.error('[API] getVariants failed:', err);
-    res.status(502).json({ error: 'Failed to fetch variants' });
+    console.error('[API] Falha em getVariants:', err);
+    res.status(502).json({ error: 'Falha ao buscar variações' });
   }
 });
 
 /**
  * Proxy: GET /api/products/:id
- * Returns product details.
+ * Retorna detalhes do produto.
  */
 app.get('/api/products/:id', apiLimiter, async (req: Request, res: Response) => {
   if (!req.session.accessToken) {
-    res.status(401).json({ error: 'Not authenticated' });
+    res.status(401).json({ error: 'Não autenticado' });
     return;
   }
   try {
@@ -158,13 +158,13 @@ app.get('/api/products/:id', apiLimiter, async (req: Request, res: Response) => 
     const product = await service.getProduct(req.params.id);
     res.json(product);
   } catch (err) {
-    console.error('[API] getProduct failed:', err);
-    res.status(502).json({ error: 'Failed to fetch product' });
+    console.error('[API] Falha em getProduct:', err);
+    res.status(502).json({ error: 'Falha ao buscar produto' });
   }
 });
 
 /**
- * LGPD data deletion webhook.
+ * Webhook de exclusão de dados (LGPD).
  * POST /api/webhooks/data-deletion
  */
 app.post(
@@ -176,11 +176,11 @@ app.post(
     };
 
     if (!store_id || !customer_id) {
-      res.status(400).json({ error: 'Missing store_id or customer_id' });
+      res.status(400).json({ error: 'Campos store_id ou customer_id ausentes' });
       return;
     }
 
-    // In a real implementation, delete or anonymise all PII for this customer.
+    // Em uma implementação real, excluir ou anonimizar todos os dados pessoais do cliente.
     console.info(
       `[LGPD] Data deletion request received for store=${store_id}, customer=${customer_id}`
     );
@@ -192,23 +192,23 @@ app.post(
 // ─── Global error handler ──────────────────────────────────────────────────────
 
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-  console.error('[Server] Unhandled error:', err);
-  res.status(500).json({ error: 'Internal server error' });
+  console.error('[Servidor] Erro não tratado:', err);
+  res.status(500).json({ error: 'Erro interno do servidor' });
 });
 
 // ─── Start ─────────────────────────────────────────────────────────────────────
 
-// When invoked as a cron job for LGPD webhook sync, run housekeeping and exit.
+// Quando invocado como cron job para sincronização de webhooks LGPD, executa a limpeza e encerra.
 if (process.argv.includes('--lgpd-sync')) {
-  console.log('[LGPD Sync] Running scheduled webhook sync...');
-  // Re-register data-deletion webhooks with Nuvemshop (LGPD requirement).
-  // In a full implementation this would iterate over all authorized stores
-  // and ensure each one has an active data-deletion webhook registered.
-  console.log('[LGPD Sync] Webhook sync complete.');
+  console.log('[LGPD Sync] Executando sincronização periódica de webhooks...');
+  // Re-registra os webhooks de exclusão de dados na Nuvemshop (exigência LGPD).
+  // Em uma implementação completa, isso iteraria por todas as lojas autorizadas
+  // e garantiria que cada uma tenha um webhook de exclusão de dados ativo registrado.
+  console.log('[LGPD Sync] Sincronização de webhooks concluída.');
   process.exit(0);
 } else {
   app.listen(PORT, () => {
-    console.log(`[Server] Grade de Atacado backend running on port ${PORT}`);
+    console.log(`[Servidor] Backend Grade de Atacado rodando na porta ${PORT}`);
   });
 }
 

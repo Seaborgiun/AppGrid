@@ -8,8 +8,8 @@ interface VariantGridProps {
 }
 
 /**
- * Wholesale product grid component.
- * Renders a table of variants grouped by option1 (color) × option2 (size).
+ * Componente de grade de produtos para atacado.
+ * Renderiza uma tabela de variações agrupadas por option1 (cor) × option2 (tamanho).
  */
 const VariantGrid: React.FC<VariantGridProps> = memo(
   ({ variants, onBulkAdd, maxQuantityPerVariant = 999 }) => {
@@ -17,11 +17,11 @@ const VariantGrid: React.FC<VariantGridProps> = memo(
     const [skuSearch, setSkuSearch] = useState('');
     const [stockOnly, setStockOnly] = useState(false);
 
-    // Determine option labels from first variant
+    // Determina os rótulos das opções a partir da primeira variação
     const option1Label = variants[0]?.option1 ?? 'Cor';
     const option2Label = variants[0]?.option2 ?? 'Tamanho';
 
-    // Filter variants by SKU search and stock toggle
+    // Filtra variações por busca de SKU e toggle de estoque
     const filteredVariants = useMemo(() => {
       return variants.filter((v) => {
         const matchesSku =
@@ -32,7 +32,7 @@ const VariantGrid: React.FC<VariantGridProps> = memo(
       });
     }, [variants, skuSearch, stockOnly]);
 
-    // Collect unique sizes (option2 values) preserving insertion order
+    // Coleta tamanhos únicos (valores de option2) mantendo a ordem de inserção
     const sizes = useMemo(() => {
       const seen = new Set<string>();
       filteredVariants.forEach((v) => {
@@ -41,7 +41,7 @@ const VariantGrid: React.FC<VariantGridProps> = memo(
       return Array.from(seen);
     }, [filteredVariants]);
 
-    // Group variants: colorValue → sizeValue → variant
+    // Agrupa variações: valorCor → valorTamanho → variação
     const grid = useMemo(() => {
       const map = new Map<string, Map<string, FormattedVariant>>();
       filteredVariants.forEach((v) => {
@@ -55,12 +55,12 @@ const VariantGrid: React.FC<VariantGridProps> = memo(
 
     const colors = useMemo(() => Array.from(grid.keys()), [grid]);
 
-    // Calculate total units selected
+    // Calcula o total de unidades selecionadas
     const totalUnits = useMemo(() => {
       return Object.values(quantities).reduce((sum, q) => sum + (q || 0), 0);
     }, [quantities]);
 
-    // Calculate total price
+    // Calcula o preço total
     const totalPrice = useMemo(() => {
       return Object.entries(quantities).reduce((sum, [idStr, qty]) => {
         const id = parseInt(idStr, 10);

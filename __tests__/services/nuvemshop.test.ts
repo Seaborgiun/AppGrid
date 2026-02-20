@@ -6,7 +6,7 @@ import { setupServer } from 'msw/node';
 import { NuvemshopAPIService } from '../../src/services/nuvemshop';
 import type { NuvemshopVariant, NuvemshopAttribute } from '../../types/nuvemshop';
 
-// ─── Fixtures ─────────────────────────────────────────────────────────────────
+// ─── Dados de teste ───────────────────────────────────────────────────────────
 
 const mockVariant: NuvemshopVariant = {
   id: 101,
@@ -30,7 +30,7 @@ const mockAttributes: NuvemshopAttribute[] = [
   { en: 'Size', pt: 'Tamanho', es: 'Talla' },
 ];
 
-// ─── MSW Server ───────────────────────────────────────────────────────────────
+// ─── Servidor MSW ─────────────────────────────────────────────────────────────
 
 const BASE = 'https://api.nuvemshop.com.br';
 const USER_ID = 42;
@@ -38,7 +38,7 @@ const USER_ID = 42;
 let rateLimitCallCount = 0;
 
 const server = setupServer(
-  // OAuth token endpoint
+  // Endpoint de token OAuth
   http.post('https://www.nuvemshop.com.br/apps/authorize/token', () => {
     return HttpResponse.json({
       access_token: 'test-token-abc',
@@ -48,14 +48,14 @@ const server = setupServer(
     });
   }),
 
-  // Variants endpoint – first page
+  // Endpoint de variações – primeira página
   http.get(`${BASE}/v1/${USER_ID}/products/1/variants`, ({ request }) => {
     const url = new URL(request.url);
     const page = url.searchParams.get('page') ?? '1';
     return HttpResponse.json(page === '1' ? [mockVariant] : []);
   }),
 
-  // Variants endpoint – rate limit on first two calls, success on third
+  // Endpoint de variações – rate limit nas duas primeiras chamadas, sucesso na terceira
   http.get(`${BASE}/v1/${USER_ID}/products/999/variants`, () => {
     rateLimitCallCount++;
     if (rateLimitCallCount < 3) {
@@ -64,7 +64,7 @@ const server = setupServer(
     return HttpResponse.json([mockVariant]);
   }),
 
-  // SKU search endpoint
+  // Endpoint de busca por SKU
   http.get(`${BASE}/v1/${USER_ID}/products/variants`, ({ request }) => {
     const url = new URL(request.url);
     const q = url.searchParams.get('q') ?? '';
@@ -73,7 +73,7 @@ const server = setupServer(
   })
 );
 
-// ─── Setup / teardown ─────────────────────────────────────────────────────────
+// ─── Configuração / encerramento ─────────────────────────────────────────────
 
 beforeAll(() => server.listen({ onUnhandledRequest: 'warn' }));
 afterEach(() => {
@@ -82,9 +82,9 @@ afterEach(() => {
 });
 afterAll(() => server.close());
 
-// ─── Tests ────────────────────────────────────────────────────────────────────
+// ─── Testes ───────────────────────────────────────────────────────────────────
 
-describe('NuvemshopAPIService', () => {
+describe('NuvemshopAPIService – testes do serviço', () => {
   let service: NuvemshopAPIService;
 
   beforeEach(() => {
@@ -97,7 +97,7 @@ describe('NuvemshopAPIService', () => {
 
   // ── OAuth ──────────────────────────────────────────────────────────────────
 
-  test('authenticate() exchanges code for access token', async () => {
+  test('authenticate() troca o código de autorização pelo token de acesso', async () => {
     const token = await service.authenticate(
       'auth-code-xyz',
       'client-id',
@@ -112,7 +112,7 @@ describe('NuvemshopAPIService', () => {
 
   // ── getProductVariants ─────────────────────────────────────────────────────
 
-  test('getProductVariants() returns array of variants', async () => {
+  test('getProductVariants() retorna array de variações', async () => {
     const variants = await service.getProductVariants('1');
 
     expect(Array.isArray(variants)).toBe(true);
@@ -121,15 +121,15 @@ describe('NuvemshopAPIService', () => {
     expect(variants[0].sku).toBe('CAMISETA-P-AZUL');
   });
 
-  test('getProductVariants() accepts page parameter', async () => {
+  test('getProductVariants() aceita parâmetro de página', async () => {
     const page2 = await service.getProductVariants('1', 2);
     expect(page2).toHaveLength(0);
   });
 
-  // ── Rate limit retry ───────────────────────────────────────────────────────
+  // ── Retry por rate limit ───────────────────────────────────────────────────
 
-  test('getProductVariants() retries on 429 with exponential backoff', async () => {
-    // Speed up the test by overriding the sleep
+  test('getProductVariants() tenta novamente em 429 com backoff exponencial', async () => {
+    // Acelera o teste sobrescrevendo o sleep
     const sleepSpy = jest
       .spyOn(service as unknown as { sleep: (ms: number) => Promise<void> }, 'sleep')
       .mockResolvedValue(undefined);
@@ -137,14 +137,14 @@ describe('NuvemshopAPIService', () => {
     const variants = await service.getProductVariants('999');
 
     expect(variants).toHaveLength(1);
-    expect(sleepSpy).toHaveBeenCalledTimes(2); // two 429 responses
+    expect(sleepSpy).toHaveBeenCalledTimes(2); // duas respostas 429
     expect(sleepSpy).toHaveBeenNthCalledWith(1, 500);  // 500ms * 2^0
     expect(sleepSpy).toHaveBeenNthCalledWith(2, 1000); // 500ms * 2^1
   });
 
   // ── formatVariantForGrid ───────────────────────────────────────────────────
 
-  test('formatVariantForGrid() returns correct shape', () => {
+  test('formatVariantForGrid() retorna o formato correto', () => {
     const formatted = service.formatVariantForGrid(mockVariant, mockAttributes);
 
     expect(formatted).toMatchObject({
@@ -161,35 +161,35 @@ describe('NuvemshopAPIService', () => {
     });
   });
 
-  test('formatVariantForGrid() generates SKU from id when sku is null', () => {
+  test('formatVariantForGrid() gera SKU a partir do id quando sku é null', () => {
     const noSku = { ...mockVariant, sku: null };
     const formatted = service.formatVariantForGrid(noSku, mockAttributes);
     expect(formatted.sku).toBe('variant-101');
   });
 
-  test('formatVariantForGrid() handles missing promotional_price', () => {
+  test('formatVariantForGrid() trata promotional_price ausente', () => {
     const noPromo = { ...mockVariant, promotional_price: null };
     const formatted = service.formatVariantForGrid(noPromo, mockAttributes);
     expect(formatted.promotionalPrice).toBeNull();
   });
 
-  // ── searchVariantsBySku (with cache) ──────────────────────────────────────
+  // ── searchVariantsBySku (com cache) ──────────────────────────────────────
 
-  test('searchVariantsBySku() returns matching variants', async () => {
+  test('searchVariantsBySku() retorna variações correspondentes', async () => {
     const results = await service.searchVariantsBySku('CAMISETA');
 
     expect(results).toHaveLength(1);
     expect(results[0].sku).toBe('CAMISETA-P-AZUL');
   });
 
-  test('searchVariantsBySku() returns cached result on second call', async () => {
-    // First call fetches from network
+  test('searchVariantsBySku() retorna resultado em cache na segunda chamada', async () => {
+    // Primeira chamada vai à rede
     await service.searchVariantsBySku('CAMISETA');
 
-    // Intercept and block network – cache should serve
+    // Intercepta e bloqueia a rede – deve servir do cache
     server.use(
       http.get(`${BASE}/v1/${USER_ID}/products/variants`, () => {
-        throw new Error('Should not be called – cache should be hit');
+        throw new Error('Não deveria ser chamado – o cache deve responder');
       })
     );
 
