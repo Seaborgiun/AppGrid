@@ -4,6 +4,44 @@ Widget injectable de **Grade de Atacado** (wholesale product grid) para lojas Nu
 
 ---
 
+## 🚀 Como obter os arquivos do projeto
+
+> **Não consegue ver os arquivos?** Siga os passos abaixo.
+
+### Opção 1 – Baixar pelo GitHub (sem terminal)
+
+1. Acesse a página do repositório no GitHub:  
+   `https://github.com/Seaborgiun/AppGrid`
+2. Clique no seletor de branch (botão que mostra **"main"**) e selecione  
+   **`copilot/add-product-grade-widget`**
+3. Todos os arquivos do projeto serão exibidos.
+4. Para baixar como `.zip`: clique em **Code → Download ZIP**.
+
+### Opção 2 – Clonar pelo terminal (recomendado)
+
+```bash
+# 1. Clone o repositório
+git clone https://github.com/Seaborgiun/AppGrid.git
+cd AppGrid
+
+# 2. Acesse a branch com todos os arquivos
+git checkout copilot/add-product-grade-widget
+
+# 3. Instale as dependências
+npm install
+
+# 4. Copie e configure as variáveis de ambiente
+cp .env.example .env
+# Edite o arquivo .env com suas credenciais Nuvemshop
+
+# 5. Inicie o servidor de desenvolvimento
+npm run dev
+```
+
+> **Nota:** Após o PR ser mesclado (merged) na branch `main`, os arquivos estarão visíveis diretamente sem precisar trocar de branch.
+
+---
+
 ## Stack
 
 | Camada | Tecnologia |
