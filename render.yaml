@@ -1,0 +1,87 @@
+# render.yaml - Blueprint para deploy automático no Render.com
+# Referência: https://render.com/docs/blueprint-spec
+
+services:
+  # ─────────────────────────────────────────────────────────
+  # 1. Backend Node.js - Proxy OAuth e chamadas à API Nuvemshop
+  # ─────────────────────────────────────────────────────────
+  - type: web
+    name: appgrid-backend
+    runtime: node
+    region: ohio
+    plan: starter
+
+    # Instalar dependências e compilar TypeScript
+    buildCommand: npm ci && npm run build
+
+    # Iniciar o servidor a partir do JavaScript compilado
+    startCommand: node dist/src/index.js
+
+    # Health check para monitoramento e zero-downtime deploys
+    healthCheckPath: /health
+
+    # Deploy automático quando houver push na branch main
+    autoDeploy: true
+
+    envVars:
+      # Client ID da aplicação Nuvemshop (obrigatório)
+      - key: NUVEMSHOP_CLIENT_ID
+        sync: false
+
+      # Client Secret da aplicação Nuvemshop (obrigatório, sensível)
+      - key: NUVEMSHOP_CLIENT_SECRET
+        sync: false
+
+      # URL de redirecionamento OAuth cadastrada no painel Nuvemshop
+      - key: NUVEMSHOP_REDIRECT_URI
+        sync: false
+
+      # Chave secreta para assinatura de sessões
+      - key: SESSION_SECRET
+        generateValue: true
+
+      - key: NODE_ENV
+        value: production
+
+      - key: PORT
+        value: 3000
+
+  # ─────────────────────────────────────────────────────────
+  # 2. Static Site - Widget frontend (CDN)
+  # ─────────────────────────────────────────────────────────
+  - type: static
+    name: appgrid-widget
+    buildCommand: npm ci && npm run build:widget
+    staticPublishPath: ./dist-widget
+
+    # Headers de cache para assets versionados (1 ano)
+    headers:
+      - path: /widget.*.js
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /widget.*.css
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+
+    # Variáveis de ambiente para o build do widget
+    envVars:
+      - key: WIDGET_CDN_URL
+        sync: false
+
+  # ─────────────────────────────────────────────────────────
+  # 3. Cron Job - Sincronização de webhooks de exclusão (LGPD)
+  # ─────────────────────────────────────────────────────────
+  - type: cron
+    name: appgrid-sync-webhooks
+    runtime: node
+    schedule: "0 3 * * *"  # Diariamente às 03:00 UTC
+    buildCommand: npm ci && npm run build
+    startCommand: node dist/scripts/sync-webhooks.js
+
+    envVars:
+      - key: NUVEMSHOP_CLIENT_ID
+        sync: false
+      - key: NUVEMSHOP_CLIENT_SECRET
+        sync: false
+      - key: NODE_ENV
+        value: production
