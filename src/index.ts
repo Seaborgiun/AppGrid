@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import session from 'express-session';
+import rateLimit from 'express-rate-limit';
 import { NuvemshopAPIService } from './services/nuvemshop';
 
 const app = express();
@@ -49,6 +50,25 @@ function buildApiService(req: Request): NuvemshopAPIService {
   });
 }
 
+// ─── Rate limiters ────────────────────────────────────────────────────────────
+
+/** Strict limit on OAuth callback: 10 attempts per 15 minutes per IP */
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many authentication attempts, please try again later.' },
+});
+
+/** General API limiter: 100 requests per minute per IP */
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // ─── Routes ────────────────────────────────────────────────────────────────────
 
 /** Health check */
@@ -60,7 +80,7 @@ app.get('/health', (_req: Request, res: Response) => {
  * OAuth callback: exchange code for access token.
  * GET /auth/callback?code=xxx&shop_id=yyy
  */
-app.get('/auth/callback', async (req: Request, res: Response) => {
+app.get('/auth/callback', authLimiter, async (req: Request, res: Response) => {
   const { code, shop_id } = req.query as Record<string, string>;
 
   if (!code || !shop_id) {
@@ -106,7 +126,7 @@ app.get('/auth/callback', async (req: Request, res: Response) => {
  * Proxy: GET /api/products/:id/variants
  * Returns formatted variants (access token never exposed to frontend).
  */
-app.get('/api/products/:id/variants', async (req: Request, res: Response) => {
+app.get('/api/products/:id/variants', apiLimiter, async (req: Request, res: Response) => {
   if (!req.session.accessToken) {
     res.status(401).json({ error: 'Not authenticated' });
     return;
@@ -128,7 +148,7 @@ app.get('/api/products/:id/variants', async (req: Request, res: Response) => {
  * Proxy: GET /api/products/:id
  * Returns product details.
  */
-app.get('/api/products/:id', async (req: Request, res: Response) => {
+app.get('/api/products/:id', apiLimiter, async (req: Request, res: Response) => {
   if (!req.session.accessToken) {
     res.status(401).json({ error: 'Not authenticated' });
     return;
