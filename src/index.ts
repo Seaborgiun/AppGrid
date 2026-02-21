@@ -75,7 +75,7 @@ const apiLimiter = rateLimit({
 app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', version: '1.0.0' });
 });
-/*** Rota de login para aplicativo embeddado da Nuvemshop */
+/** Rota de login para aplicativo embeddado da Nuvemshop */
 app.get('/login', (req: Request, res: Response) => {
   const embedded = req.query.embedded;
   
