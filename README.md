@@ -6,39 +6,57 @@ Widget injectable de **Grade de Atacado** (wholesale product grid) para lojas Nu
 
 ## 🚀 Como obter os arquivos do projeto
 
-> **Não consegue ver os arquivos?** Siga os passos abaixo.
+> **Não consegue ver os arquivos?** Siga os passos abaixo para mesclar o PR na `main` ou acessar os arquivos diretamente.
 
-### Opção 1 – Baixar pelo GitHub (sem terminal)
+---
 
-1. Acesse a página do repositório no GitHub:  
-   `https://github.com/Seaborgiun/AppGrid`
-2. Clique no seletor de branch (botão que mostra **"main"**) e selecione  
-   **`copilot/add-product-grade-widget`**
-3. Todos os arquivos do projeto serão exibidos.
-4. Para baixar como `.zip`: clique em **Code → Download ZIP**.
+### ✅ Passo 1 – Publicar o PR (mesclar na `main`)
 
-### Opção 2 – Clonar pelo terminal (recomendado)
+> ⚠️ O PR pode estar em modo **Rascunho (Draft)**. Nesse caso, o botão "Merge pull request" **não aparece**. Você precisa ativá-lo primeiro:
+
+1. Acesse: **[https://github.com/Seaborgiun/AppGrid/pull/2](https://github.com/Seaborgiun/AppGrid/pull/2)**
+2. Role até o final da página.
+3. Se aparecer o botão **"Ready for review"** (em cinza), **clique nele** para sair do modo rascunho.
+4. Agora aparecerá o botão verde **"Merge pull request"** — clique nele.
+5. Confirme clicando em **"Confirm merge"**.
+
+Pronto! Os arquivos estarão na branch `main`.
+
+---
+
+### 💻 Passo 2 – Acessar os arquivos pelo terminal
+
+#### Se você ainda **não tem** a pasta AppGrid no computador:
 
 ```bash
-# 1. Clone o repositório
 git clone https://github.com/Seaborgiun/AppGrid.git
 cd AppGrid
+```
 
-# 2. Acesse a branch com todos os arquivos
+#### Se você **já tem** a pasta AppGrid (erro `already exists`):
+
+```bash
+# Entre na pasta existente
+cd AppGrid
+
+# Baixe as atualizações do GitHub
+git fetch origin
+
+# Acesse a branch com todos os arquivos
 git checkout copilot/add-product-grade-widget
 
-# 3. Instale as dependências
+# Instale as dependências
 npm install
 
-# 4. Copie e configure as variáveis de ambiente
+# Copie o arquivo de variáveis de ambiente
 cp .env.example .env
-# Edite o arquivo .env com suas credenciais Nuvemshop
+# Edite o .env com suas credenciais Nuvemshop
 
-# 5. Inicie o servidor de desenvolvimento
+# Inicie o servidor
 npm run dev
 ```
 
-> **Nota:** Após o PR ser mesclado (merged) na branch `main`, os arquivos estarão visíveis diretamente sem precisar trocar de branch.
+> **Nota:** Se você já fez o merge (Passo 1), use `git checkout main && git pull origin main` em vez de `checkout copilot/add-product-grade-widget`.
 
 ---
 
