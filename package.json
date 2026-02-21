@@ -7,6 +7,7 @@
     "dev": "nodemon --exec ts-node src/index.ts",
     "build": "tsc --project tsconfig.json",
     "build:widget": "webpack --config webpack.widget.js --mode production",
+    "start": "node dist/src/index.js",
     "test": "jest --passWithNoTests",
     "deploy": "npm run build && npm run build:widget"
   },
