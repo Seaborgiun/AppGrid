@@ -1,0 +1,52 @@
+services:
+  # ─── Backend: proxy de API Node.js Express ───────────────────────────────────
+  - type: web
+    name: appgrid-backend
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: node dist/src/index.js
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: NUVEMSHOP_CLIENT_ID
+        sync: false
+      - key: NUVEMSHOP_CLIENT_SECRET
+        sync: false
+      - key: NUVEMSHOP_REDIRECT_URI
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        sync: false
+      - key: POST_AUTH_REDIRECT
+        sync: false
+
+  # ─── Site Estático: CDN do Widget ────────────────────────────────────────────
+  - type: web
+    name: appgrid-widget
+    runtime: static
+    buildCommand: npm ci && npm run build:widget
+    staticPublishPath: dist-widget
+    autoDeploy: true
+    headers:
+      - path: /widget.js
+        name: Cache-Control
+        value: public, max-age=3600, stale-while-revalidate=86400
+      - path: /widget.css
+        name: Cache-Control
+        value: public, max-age=3600, stale-while-revalidate=86400
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /widget.js
+
+# ─── Cron Job: sincronização LGPD / limpeza ──────────────────────────────────
+cronJobs:
+  - name: lgpd-sync
+    schedule: "0 3 * * *"
+    startCommand: node dist/src/index.js --lgpd-sync
