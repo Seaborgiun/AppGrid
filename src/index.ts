@@ -75,7 +75,17 @@ const apiLimiter = rateLimit({
 app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', version: '1.0.0' });
 });
-
+/*** Rota de login para aplicativo embeddado da Nuvemshop */
+app.get('/login', (req: Request, res: Response) => {
+  const embedded = req.query.embedded;
+  
+  if (embedded) {
+    const authUrl = `${process.env.NUVEMSHOP_OAUTH_AUTHORIZE_URL}?client_id=${process.env.NUVEMSHOP_APP_ID}&redirect_uri=${process.env.NUVEMSHOP_REDIRECT_URI}&response_type=code&scope=${process.env.NUVEMSHOP_SCOPES}`;
+    res.redirect(authUrl);
+  } else {
+    res.send('<h1>AppGrid</h1><p>Use via painel Nuvemshop</p>');
+  }
+});
 /**
  * Callback OAuth: troca o code pelo access token.
  * GET /auth/callback?code=xxx&shop_id=yyy
