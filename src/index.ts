@@ -91,10 +91,10 @@ app.get('/login', (req: Request, res: Response) => {
  * GET /api/auth/callback?code=xxx&shop_id=yyy
  */
 app.get('/api/auth/callback', authLimiter, async (req: Request, res: Response) => {
-  const { code, shop_id } = req.query as Record<string, string>;
+  const { code, store_id } = req.query as Record<string, string>;
 
-  if (!code || !shop_id) {
-    res.status(400).json({ error: 'Parâmetro code ou shop_id ausente' });
+  if (!code || !store_id) {
+    res.status(400).json({ error: 'Parâmetro code ou store_id ausente' });
     return;
   }
 
@@ -124,7 +124,7 @@ app.get('/api/auth/callback', authLimiter, async (req: Request, res: Response) =
     // Redireciona para o admin da loja ou página de sucesso
     const redirectTo =
       process.env.POST_AUTH_REDIRECT ||
-      `https://${shop_id}.lojavirtualnuvem.com.br/admin`;
+      `https://${store_id}.lojavirtualnuvem.com.br/admin`;
     res.redirect(302, redirectTo);
   } catch (err) {
     console.error('[Auth] Falha na troca OAuth:', err);
