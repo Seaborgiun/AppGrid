@@ -88,9 +88,9 @@ app.get('/login', (req: Request, res: Response) => {
 });
 /**
  * Callback OAuth: troca o code pelo access token.
- * GET /auth/callback?code=xxx&shop_id=yyy
+ * GET /api/auth/callback?code=xxx&shop_id=yyy
  */
-app.get('/auth/callback', authLimiter, async (req: Request, res: Response) => {
+app.get('/api/auth/callback', authLimiter, async (req: Request, res: Response) => {
   const { code, shop_id } = req.query as Record<string, string>;
 
   if (!code || !shop_id) {
