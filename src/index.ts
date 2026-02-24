@@ -87,15 +87,17 @@ app.get('/login', (req: Request, res: Response) => {
   }
 });
 /**
- * Callback OAuth: troca o code pelo access token.
- * GET /api/auth/callback?code=xxx&shop_id=yyy
+ * Handler compartilhado do callback OAuth.
+ * Troca o code pelo access token.
+ *
+ * Nota: a Nuvemshop envia apenas `code` no redirect — shop_id/store_id
+ * NÃO são parâmetros de query; o user_id é retornado na resposta do token.
  */
-app.get('/api/auth/callback', authLimiter, async (req: Request, res: Response) => {
-  const { code, shop_id, store_id } = req.query as Record<string, string>;
-  const storeId = shop_id || store_id;
+async function handleOAuthCallback(req: Request, res: Response): Promise<void> {
+  const { code } = req.query as Record<string, string>;
 
-  if (!code || !storeId) {
-    res.status(400).json({ error: 'Parâmetro code ou shop_id/store_id ausente' });
+  if (!code) {
+    res.status(400).json({ error: 'Parâmetro code ausente' });
     return;
   }
 
@@ -122,16 +124,27 @@ app.get('/api/auth/callback', authLimiter, async (req: Request, res: Response) =
     req.session.accessToken = tokenData.access_token;
     req.session.userId = tokenData.user_id;
 
-    // Redireciona para o admin da loja ou página de sucesso
+    // Redireciona para a URL configurada ou para uma página de sucesso padrão
     const redirectTo =
-      process.env.POST_AUTH_REDIRECT ||
-      `https://${storeId}.lojavirtualnuvem.com.br/admin`;
+      process.env.POST_AUTH_REDIRECT || '/';
     res.redirect(302, redirectTo);
   } catch (err) {
     console.error('[Auth] Falha na troca OAuth:', err);
     res.status(502).json({ error: 'Falha na troca do token OAuth' });
   }
-});
+}
+
+/**
+ * Alias de compatibilidade: Nuvemshop pode redirecionar para /callback
+ * GET /callback?code=xxx
+ */
+app.get('/callback', authLimiter, handleOAuthCallback);
+
+/**
+ * Callback OAuth: troca o code pelo access token.
+ * GET /api/auth/callback?code=xxx
+ */
+app.get('/api/auth/callback', authLimiter, handleOAuthCallback);
 
 /**
  * Proxy: GET /api/products/:id/variants

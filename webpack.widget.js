@@ -1,5 +1,6 @@
 const path = require('path');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
 
 module.exports = (env, argv) => {
   const isProd = argv.mode === 'production';
@@ -63,6 +64,21 @@ module.exports = (env, argv) => {
     optimization: {
       minimize: isProd,
       usedExports: true,
+      sideEffects: false,
+      minimizer: isProd ? [
+        new TerserPlugin({
+          terserOptions: {
+            compress: {
+              // Evita renaming que causa TDZ em bundles UMD
+              toplevel: false,
+            },
+            mangle: {
+              // Não renomeia variáveis de módulo no toplevel do UMD wrapper
+              toplevel: false,
+            },
+          },
+        }),
+      ] : [],
     },
     performance: {
       hints: isProd ? 'warning' : false,
