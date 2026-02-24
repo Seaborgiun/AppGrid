@@ -63,7 +63,6 @@ module.exports = (env, argv) => {
     optimization: {
       minimize: isProd,
       usedExports: true,
-      sideEffects: false,
     },
     performance: {
       hints: isProd ? 'warning' : false,
