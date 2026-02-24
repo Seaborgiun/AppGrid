@@ -101,7 +101,7 @@ cp .env.example .env
 |----------|-----------|
 | `NUVEMSHOP_CLIENT_ID` | Client ID do app no portal de parceiros |
 | `NUVEMSHOP_CLIENT_SECRET` | Client Secret do app |
-| `NUVEMSHOP_REDIRECT_URI` | URL de callback OAuth (ex: `https://seuapp.com/auth/callback`) |
+| `NUVEMSHOP_REDIRECT_URI` | URL de callback OAuth (ex: `https://seuapp.com/api/auth/callback`) |
 | `NODE_ENV` | `development` ou `production` |
 | `PORT` | Porta do servidor Express (padrão: `3000`) |
 | `SESSION_SECRET` | String aleatória segura para assinar sessões |
@@ -147,9 +147,10 @@ npm test
    ```
    https://www.nuvemshop.com.br/apps/{CLIENT_ID}/authorize
    ```
-2. Nuvemshop redireciona para `NUVEMSHOP_REDIRECT_URI?code=xxx&shop_id=yyy`
+2. Nuvemshop redireciona para `NUVEMSHOP_REDIRECT_URI?code=xxx` (apenas o `code`, sem `shop_id`)
 3. O backend troca o code pelo access_token via `POST /apps/authorize/token`
-4. O token é armazenado na sessão do servidor (**nunca exposto ao frontend**)
+4. O `user_id` da loja é retornado junto com o `access_token` (não na URL de redirect)
+5. O token é armazenado na sessão do servidor (**nunca exposto ao frontend**)
 
 ---
 
@@ -177,7 +178,8 @@ Adicione ao tema da loja Nuvemshop (ex: `templates/product.html`):
 | Método | Rota | Descrição |
 |--------|------|-----------|
 | `GET` | `/health` | Health check |
-| `GET` | `/auth/callback` | Callback OAuth |
+| `GET` | `/api/auth/callback` | Callback OAuth |
+| `GET` | `/callback` | Alias de compatibilidade para `/api/auth/callback` |
 | `GET` | `/api/products/:id/variants` | Variantes formatadas |
 | `GET` | `/api/products/:id` | Detalhes do produto |
 | `POST` | `/api/webhooks/data-deletion` | Webhook LGPD |
