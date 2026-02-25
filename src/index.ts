@@ -4,6 +4,7 @@ import cors from 'cors';
 import session from 'express-session';
 import rateLimit from 'express-rate-limit';
 import { NuvemshopAPIService } from './services/nuvemshop';
+import { saveToken, getToken, removeToken } from './store/tokens';
 
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
@@ -140,6 +141,7 @@ async function handleOAuthCallback(req: Request, res: Response): Promise<void> {
 
     req.session.accessToken = tokenData.access_token;
     req.session.userId = tokenData.user_id;
+    saveToken(tokenData.user_id, tokenData.access_token);
 
     // Redireciona para a URL configurada ou para uma página de sucesso padrão
     const redirectTo =
@@ -225,6 +227,7 @@ app.post(
     console.info(
       `[LGPD] Data deletion request received for store=${store_id}, customer=${customer_id}`
     );
+    removeToken(parseInt(store_id, 10));
 
     res.json({ received: true, store_id, customer_id });
   }
@@ -273,6 +276,17 @@ app.get('/dashboard', (req: Request, res: Response) => {
  * GET /
  */
 app.get('/', (req: Request, res: Response) => {
+  if (!req.session.accessToken) {
+    const queryUserId = parseInt(req.query.user_id as string || '0', 10);
+    if (queryUserId) {
+      const stored = getToken(queryUserId);
+      if (stored) {
+        req.session.accessToken = stored.accessToken;
+        req.session.userId = stored.userId;
+      }
+    }
+  }
+
   if (req.session.accessToken) {
     res.redirect('/dashboard');
   } else {

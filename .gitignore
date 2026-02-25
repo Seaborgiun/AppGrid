@@ -149,3 +149,4 @@ types/*.d.ts
 types/*.d.ts.map
 
 # Widget build artifacts
+data/
