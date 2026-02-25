@@ -39,6 +39,15 @@ app.use(
   })
 );
 
+app.use((_req: Request, res: Response, next: NextFunction) => {
+  res.removeHeader('X-Frame-Options');
+  res.setHeader(
+    'Content-Security-Policy',
+    "frame-ancestors 'self' *.nuvemshop.com.br *.lojavirtualnuvem.com.br *.tiendanube.com *.mitiendanube.com"
+  );
+  next();
+});
+
 // ─── Auxiliar: cria o serviço de API a partir da sessão ──────────────────────
 
 function buildApiService(req: Request): NuvemshopAPIService {
