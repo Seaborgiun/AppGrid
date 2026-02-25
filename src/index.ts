@@ -57,6 +57,19 @@ app.use((_req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
+// ─── CSP para apps embarcados Nuvemshop ──────────────────────────────────────
+// Permite que o app seja carregado em iframe pelos domínios da Nuvemshop/Tiendanube
+app.use((_req: Request, res: Response, next: NextFunction) => {
+  // Remove X-Frame-Options se existir (conflita com frame-ancestors CSP)
+  res.removeHeader('X-Frame-Options');
+  // Permite embedding em domínios Nuvemshop e Tiendanube
+  res.setHeader(
+    'Content-Security-Policy',
+    "frame-ancestors 'self' *.nuvemshop.com.br *.lojavirtualnuvem.com.br *.tiendanube.com *.mitiendanube.com"
+  );
+  next();
+});
+
 // ─── Auxiliar: cria o serviço de API a partir da sessão ──────────────────────
 
 function buildApiService(req: Request): NuvemshopAPIService {
