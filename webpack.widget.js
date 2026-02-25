@@ -64,7 +64,6 @@ module.exports = (env, argv) => {
     optimization: {
       minimize: isProd,
       usedExports: true,
-      sideEffects: false,
       minimizer: isProd ? [
         new TerserPlugin({
           terserOptions: {
