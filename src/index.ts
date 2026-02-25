@@ -213,6 +213,56 @@ app.post(
   }
 );
 
+/**
+ * Dashboard principal do app embarcado.
+ * Requer autenticação — redireciona para /login se sessão inativa.
+ * GET /dashboard
+ */
+app.get('/dashboard', (req: Request, res: Response) => {
+  if (!req.session.accessToken) {
+    res.redirect('/login');
+    return;
+  }
+
+  res.send(`<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Grade de Atacado — Dashboard</title>
+    <style>
+      body { font-family: system-ui, -apple-system, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; color: #1f2937; }
+      h1 { color: #111827; }
+      .card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; margin-top: 24px; }
+      .badge { display: inline-block; background: #d1fae5; color: #065f46; padding: 4px 12px; border-radius: 9999px; font-size: 14px; font-weight: 600; }
+      code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <h1>Grade de Atacado</h1>
+    <span class="badge">✓ Instalado com sucesso</span>
+    <div class="card">
+      <h2>Widget ativo</h2>
+      <p>O widget de grade de atacado está pronto para ser usado na sua loja Nuvemshop.</p>
+      <p>Para ativar o widget nas páginas de produto, adicione o seguinte código ao template do produto no editor de temas:</p>
+      <pre><code>&lt;div data-grade-atacado data-product-id="{{ product.id }}" data-api-url="https://app.estudio428.com.br"&gt;&lt;/div&gt;</code></pre>
+    </div>
+  </body>
+</html>`);
+});
+
+/**
+ * Rota raiz — redireciona conforme o estado da sessão.
+ * GET /
+ */
+app.get('/', (req: Request, res: Response) => {
+  if (req.session.accessToken) {
+    res.redirect('/dashboard');
+  } else {
+    res.redirect('/login');
+  }
+});
+
 // ─── Global error handler ──────────────────────────────────────────────────────
 
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
