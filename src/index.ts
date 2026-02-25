@@ -38,7 +38,15 @@ app.use(
     },
   })
 );
-
+// Permite embedding no iframe do painel Nuvemshop/Tiendanube
+app.use((_req: Request, res: Response, next: NextFunction) => {
+  res.setHeader(
+    'Content-Security-Policy',
+    "frame-ancestors 'self' *.nuvemshop.com.br *.lojavirtualnuvem.com.br *.tiendanube.com *.mitiendanube.com"
+  );
+  res.removeHeader('X-Frame-Options'); // garante que não conflite
+  next();
+});
 app.use((_req: Request, res: Response, next: NextFunction) => {
   res.removeHeader('X-Frame-Options');
   res.setHeader(
