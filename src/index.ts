@@ -106,6 +106,40 @@ const apiLimiter = rateLimit({
 app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', version: '1.0.0' });
 });
+
+/**
+ * Rota raiz — dashboard do app embarcado.
+ * Usuários autenticados veem o dashboard; não autenticados são redirecionados.
+ */
+app.get('/', (req: Request, res: Response) => {
+  if (!req.session.accessToken) {
+    res.redirect('/login');
+    return;
+  }
+
+  res.send(`<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Grade de Atacado — AppGrid</title>
+    <style>
+      body { font-family: system-ui, -apple-system, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; color: #1f2937; }
+      h1 { color: #111827; }
+      .card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; margin-top: 24px; }
+      .badge { display: inline-block; background: #d1fae5; color: #065f46; padding: 4px 12px; border-radius: 9999px; font-size: 14px; font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    <h1>Grade de Atacado</h1>
+    <span class="badge">✓ Autenticado</span>
+    <div class="card">
+      <p>Aplicativo instalado com sucesso! O widget de grade de atacado está ativo na sua loja.</p>
+      <p>Para configurar o widget, adicione o snippet HTML ao template do produto no painel de temas da Nuvemshop.</p>
+    </div>
+  </body>
+</html>`);
+});
 /** Rota de login para aplicativo embeddado da Nuvemshop */
 app.get('/login', (req: Request, res: Response) => {
   const embedded = req.query.embedded;
