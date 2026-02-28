@@ -1,6 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import VariantGrid from './components/VariantGrid/VariantGrid';
+import ErrorBoundary from './components/ErrorBoundary';
 import { addToCartBulk } from './utils/cart-injector';
 import type { FormattedVariant, CartItem } from '../types/nuvemshop';
 
@@ -102,7 +103,11 @@ function WidgetApp({
  */
 function mountWidget({ productId, apiUrl, container }: WidgetMountOptions) {
   const root = createRoot(container);
-  root.render(<WidgetApp productId={productId} apiUrl={apiUrl} />);
+  root.render(
+    <ErrorBoundary>
+      <WidgetApp productId={productId} apiUrl={apiUrl} />
+    </ErrorBoundary>
+  );
 }
 
 /**

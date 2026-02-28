@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{title}}</title>
+    <style>
+      body { font-family: system-ui, -apple-system, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; color: #1f2937; }
+      h1 { color: #111827; }
+      .card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; margin-top: 24px; }
+      .badge { display: inline-block; background: #d1fae5; color: #065f46; padding: 4px 12px; border-radius: 9999px; font-size: 14px; font-weight: 600; }
+      code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <h1>{{heading}}</h1>
+    <span class="badge">{{badge}}</span>
+    <div class="card">
+      <h2>{{card_title}}</h2>
+      <p>{{card_body}}</p>
+      <p>{{card_instructions}}</p>
+      <pre><code>{{snippet}}</code></pre>
+    </div>
+  </body>
+</html>

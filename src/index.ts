@@ -3,18 +3,46 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import session from 'express-session';
 import rateLimit from 'express-rate-limit';
+import fs from 'fs';
+import path from 'path';
 import { NuvemshopAPIService } from './services/nuvemshop';
-import { saveToken, getToken, removeToken } from './store/tokens';
+import { saveToken, getToken, removeToken, getAllTokens } from './store/tokens';
+import { webhookHmac } from './middleware/webhookHmac';
+import { t, detectLocale } from './i18n';
 
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+
+// ─── CORS whitelist ────────────────────────────────────────────────────────────
+
+const NUVEMSHOP_ORIGINS = [
+  /\.nuvemshop\.com\.br$/,
+  /\.tiendanube\.com$/,
+  /\.mitiendanube\.com$/,
+  /\.lojavirtualnuvem\.com\.br$/,
+];
+
+function isAllowedOrigin(origin: string): boolean {
+  if (process.env.NODE_ENV !== 'production' && /^https?:\/\/localhost(:\d+)?$/.test(origin)) {
+    return true;
+  }
+  if (process.env.CORS_ORIGIN && origin === process.env.CORS_ORIGIN) {
+    return true;
+  }
+  return NUVEMSHOP_ORIGINS.some((pattern) => pattern.test(origin));
+}
 
 // ─── Middleware ────────────────────────────────────────────────────────────────
 
 app.use(express.json());
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || true,
+    origin: (origin, callback) => {
+      // Permite requisições sem origin (ex: curl, server-to-server)
+      if (!origin) return callback(null, true);
+      if (isAllowedOrigin(origin)) return callback(null, true);
+      callback(new Error(`Origem não permitida: ${origin}`));
+    },
     credentials: true,
   })
 );
@@ -24,6 +52,15 @@ declare module 'express-session' {
     accessToken?: string;
     userId?: number;
   }
+}
+
+// ─── Session secret validation ────────────────────────────────────────────────
+if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
+  console.error('[Servidor] ERRO: SESSION_SECRET não está definida em produção. O servidor não pode iniciar.');
+  process.exit(1);
+}
+if (process.env.NODE_ENV !== 'production' && !process.env.SESSION_SECRET) {
+  console.warn('[Servidor] AVISO: SESSION_SECRET não definida — usando valor padrão inseguro em desenvolvimento.');
 }
 
 app.use(
@@ -107,39 +144,6 @@ app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', version: '1.0.0' });
 });
 
-/**
- * Rota raiz — dashboard do app embarcado.
- * Usuários autenticados veem o dashboard; não autenticados são redirecionados.
- */
-app.get('/', (req: Request, res: Response) => {
-  if (!req.session.accessToken) {
-    res.redirect('/login');
-    return;
-  }
-
-  res.send(`<!DOCTYPE html>
-<html lang="pt-BR">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Grade de Atacado — AppGrid</title>
-    <style>
-      body { font-family: system-ui, -apple-system, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; color: #1f2937; }
-      h1 { color: #111827; }
-      .card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; margin-top: 24px; }
-      .badge { display: inline-block; background: #d1fae5; color: #065f46; padding: 4px 12px; border-radius: 9999px; font-size: 14px; font-weight: 600; }
-    </style>
-  </head>
-  <body>
-    <h1>Grade de Atacado</h1>
-    <span class="badge">✓ Autenticado</span>
-    <div class="card">
-      <p>Aplicativo instalado com sucesso! O widget de grade de atacado está ativo na sua loja.</p>
-      <p>Para configurar o widget, adicione o snippet HTML ao template do produto no painel de temas da Nuvemshop.</p>
-    </div>
-  </body>
-</html>`);
-});
 /** Rota de login para aplicativo embeddado da Nuvemshop */
 app.get('/login', (req: Request, res: Response) => {
   const embedded = req.query.embedded;
@@ -259,6 +263,7 @@ app.get('/api/products/:id', apiLimiter, async (req: Request, res: Response) => 
  */
 app.post(
   '/api/webhooks/data-deletion',
+  webhookHmac,
   (req: Request, res: Response) => {
     const { store_id, customer_id } = req.body as {
       store_id?: string;
@@ -270,13 +275,22 @@ app.post(
       return;
     }
 
-    // Em uma implementação real, excluir ou anonimizar todos os dados pessoais do cliente.
-    console.info(
-      `[LGPD] Data deletion request received for store=${store_id}, customer=${customer_id}`
-    );
-    removeToken(parseInt(store_id, 10));
+    const timestamp = new Date().toISOString();
+    const storeIdNum = parseInt(store_id, 10);
 
-    res.json({ received: true, store_id, customer_id });
+    // Remove token da loja e limpa sessão associada
+    removeToken(storeIdNum);
+
+    // Log estruturado para auditoria LGPD
+    console.info(JSON.stringify({
+      event: 'lgpd_data_deletion',
+      store_id,
+      customer_id,
+      timestamp,
+      action: 'token_removed',
+    }));
+
+    res.json({ status: 'deleted', store_id, timestamp });
   }
 );
 
@@ -285,37 +299,45 @@ app.post(
  * Requer autenticação — redireciona para /login se sessão inativa.
  * GET /dashboard
  */
-app.get('/dashboard', (req: Request, res: Response) => {
+app.get('/dashboard', apiLimiter, (req: Request, res: Response) => {
   if (!req.session.accessToken) {
     res.redirect('/login');
     return;
   }
 
-  res.send(`<!DOCTYPE html>
-<html lang="pt-BR">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Grade de Atacado — Dashboard</title>
-    <style>
-      body { font-family: system-ui, -apple-system, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; color: #1f2937; }
-      h1 { color: #111827; }
-      .card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; margin-top: 24px; }
-      .badge { display: inline-block; background: #d1fae5; color: #065f46; padding: 4px 12px; border-radius: 9999px; font-size: 14px; font-weight: 600; }
-      code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
-    </style>
-  </head>
-  <body>
-    <h1>Grade de Atacado</h1>
-    <span class="badge">✓ Instalado com sucesso</span>
-    <div class="card">
-      <h2>Widget ativo</h2>
-      <p>O widget de grade de atacado está pronto para ser usado na sua loja Nuvemshop.</p>
-      <p>Para ativar o widget nas páginas de produto, adicione o seguinte código ao template do produto no editor de temas:</p>
-      <pre><code>&lt;div data-grade-atacado data-product-id="{{ product.id }}" data-api-url="https://app.estudio428.com.br"&gt;&lt;/div&gt;</code></pre>
-    </div>
-  </body>
-</html>`);
+  const locale = detectLocale(req.headers['accept-language']);
+  // Resolve template path: dev runs from source, prod runs from dist
+  const possiblePaths = [
+    path.join(__dirname, 'templates', 'dashboard.html'),
+    path.join(process.cwd(), 'src', 'templates', 'dashboard.html'),
+  ];
+  let html = '';
+  for (const p of possiblePaths) {
+    try {
+      html = fs.readFileSync(p, 'utf8');
+      break;
+    } catch {
+      // try next path
+    }
+  }
+  if (!html) {
+    res.status(500).send('Template não encontrado');
+    return;
+  }
+
+  const appUrl = process.env.NUVEMSHOP_REDIRECT_URI?.replace('/api/auth/callback', '') ?? 'https://app.estudio428.com.br';
+  const snippet = `&lt;div data-grade-atacado data-product-id="{{ product.id }}" data-api-url="${appUrl}"&gt;&lt;/div&gt;`;
+
+  const rendered = html
+    .replace('{{title}}', t('dashboard_title', locale))
+    .replace('{{heading}}', t('dashboard_heading', locale))
+    .replace('{{badge}}', t('dashboard_badge', locale))
+    .replace('{{card_title}}', t('dashboard_card_title', locale))
+    .replace('{{card_body}}', t('dashboard_card_body', locale))
+    .replace('{{card_instructions}}', t('dashboard_card_instructions', locale))
+    .replace('{{snippet}}', snippet);
+
+  res.send(rendered);
 });
 
 /**
@@ -352,12 +374,54 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 
 // Quando invocado como cron job para sincronização de webhooks LGPD, executa a limpeza e encerra.
 if (process.argv.includes('--lgpd-sync')) {
-  console.log('[LGPD Sync] Executando sincronização periódica de webhooks...');
-  // Re-registra os webhooks de exclusão de dados na Nuvemshop (exigência LGPD).
-  // Em uma implementação completa, isso iteraria por todas as lojas autorizadas
-  // e garantiria que cada uma tenha um webhook de exclusão de dados ativo registrado.
-  console.log('[LGPD Sync] Sincronização de webhooks concluída.');
-  process.exit(0);
+  (async () => {
+    console.log('[LGPD Sync] Executando sincronização periódica de webhooks...');
+
+    const stores = getAllTokens();
+    if (stores.length === 0) {
+      console.log('[LGPD Sync] Nenhuma loja autorizada encontrada.');
+      process.exit(0);
+    }
+
+    const dataDeletionUrl = process.env.NUVEMSHOP_REDIRECT_URI?.replace('/api/auth/callback', '/api/webhooks/data-deletion')
+      ?? `https://app.estudio428.com.br/api/webhooks/data-deletion`;
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const store of stores) {
+      try {
+        const service = new NuvemshopAPIService({
+          baseURL: 'https://api.nuvemshop.com.br',
+          accessToken: store.accessToken,
+          userId: store.userId,
+        });
+
+        // Verifica se o webhook app/uninstalled já existe
+        const existing = await service.listWebhooks(store.userId);
+        const hasWebhook = existing.some(
+          (wh: { event: string }) => wh.event === 'app/uninstalled'
+        );
+
+        if (!hasWebhook) {
+          await service.createWebhook(store.userId, {
+            event: 'app/uninstalled',
+            url: dataDeletionUrl,
+          });
+          console.log(`[LGPD Sync] Webhook criado para loja ${store.userId}`);
+        } else {
+          console.log(`[LGPD Sync] Webhook já existe para loja ${store.userId}`);
+        }
+        successCount++;
+      } catch (err) {
+        console.error(`[LGPD Sync] Erro na loja ${store.userId}:`, err);
+        errorCount++;
+      }
+    }
+
+    console.log(`[LGPD Sync] Concluído. Sucesso: ${successCount}, Erros: ${errorCount}`);
+    process.exit(errorCount > 0 ? 1 : 0);
+  })();
 } else {
   app.listen(PORT, () => {
     console.log(`[Servidor] Backend Grade de Atacado rodando na porta ${PORT}`);

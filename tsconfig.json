@@ -15,7 +15,7 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "include": ["src/index.ts", "src/services/**/*", "types/**/*"],
+  "include": ["src/index.ts", "src/services/**/*", "src/store/**/*", "src/middleware/**/*", "src/i18n/**/*", "src/nexo/**/*", "src/nube-sdk/**/*", "types/**/*"],
   "exclude": [
     "node_modules",
     "dist",

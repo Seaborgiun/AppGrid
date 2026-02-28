@@ -229,4 +229,21 @@ export class NuvemshopAPIService {
   private sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
+
+  /**
+   * Lista os webhooks registrados para uma loja.
+   */
+  async listWebhooks(userId: number): Promise<Array<{ id: number; event: string; url: string }>> {
+    const response = await this.client.get<Array<{ id: number; event: string; url: string }>>(
+      `/v1/${userId}/webhooks`
+    );
+    return response.data;
+  }
+
+  /**
+   * Cria um novo webhook para uma loja.
+   */
+  async createWebhook(userId: number, params: { event: string; url: string }): Promise<void> {
+    await this.client.post(`/v1/${userId}/webhooks`, params);
+  }
 }
