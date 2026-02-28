@@ -1,0 +1,17 @@
+{
+  "search_sku": "Buscar SKU",
+  "show_in_stock_only": "Mostrar solo con stock",
+  "units_selected": "unidades seleccionadas",
+  "out_of_stock": "Agotado",
+  "low_stock": "Bajo",
+  "no_variants_found": "No se encontraron variantes",
+  "add_to_cart": "Agregar al carrito",
+  "dashboard_title": "Panel AppGrid Mayorista",  "store_connected": "Tienda conectada",
+  "loading": "Cargando...",
+  "error_generic": "Ocurrió un error",
+  "dashboard_heading": "Cuadrícula de Mayorista",
+  "dashboard_badge": "✓ Instalado con éxito",
+  "dashboard_card_title": "Widget activo",
+  "dashboard_card_body": "El widget de cuadrícula de mayorista está listo para usarse en tu tienda Nuvemshop.",
+  "dashboard_card_instructions": "Para activar el widget en las páginas de producto, agrega el siguiente código al template del producto en el editor de temas:"
+}

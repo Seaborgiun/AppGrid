@@ -1,0 +1,18 @@
+{
+  "search_sku": "Buscar SKU",
+  "show_in_stock_only": "Mostrar apenas com estoque",
+  "units_selected": "unidades selecionadas",
+  "out_of_stock": "Esgotado",
+  "low_stock": "Baixo",
+  "no_variants_found": "Nenhuma variante encontrada",
+  "add_to_cart": "Adicionar ao carrinho",
+  "dashboard_title": "Painel AppGrid Atacado",
+  "store_connected": "Loja conectada",
+  "loading": "Carregando...",
+  "error_generic": "Ocorreu um erro",
+  "dashboard_heading": "Grade de Atacado",
+  "dashboard_badge": "✓ Instalado com sucesso",
+  "dashboard_card_title": "Widget ativo",
+  "dashboard_card_body": "O widget de grade de atacado está pronto para ser usado na sua loja Nuvemshop.",
+  "dashboard_card_instructions": "Para ativar o widget nas páginas de produto, adicione o seguinte código ao template do produto no editor de temas:"
+}
